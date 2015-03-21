@@ -16,9 +16,12 @@ class ConflictError(Exception):
 def normalized_op(op):
     @wraps(op)
     def _normalized(v1, v2):
-        nv1 = NormalizedVersion(v1)
-        nv2 = NormalizedVersion(v2)
-        return op(nv1, nv2)
+        try:
+            nv1 = NormalizedVersion(v1)
+            nv2 = NormalizedVersion(v2)
+            return op(nv1, nv2)
+        except:
+            return False
     return _normalized
 
 
@@ -388,7 +391,7 @@ class SpecSet(object):
         if '==' in by_qualifiers:
             # Multiple '==' keys are conflicts
             if len(set(by_qualifiers['=='])) > 1:
-                raise ConflictError('Conflict: %s' %
+                print ConflictError('Conflict: %s' %
                                     (' with '.join(map(lambda v: '%s==%s' % (name, v),
                                                        by_qualifiers['=='],))))
 
@@ -406,7 +409,7 @@ class SpecSet(object):
                 # Perform conflict checks
                 for op in ['>', '>=', '<', '<=']:
                     if qual == op and not ops[op](pinned_version, value):
-                        raise ConflictError(
+                        print ConflictError(
                             "Conflict: {name}=={pinned} with "
                             "{name}{op}{version}".format(
                                 name=name, pinned=pinned_version,
@@ -415,7 +418,7 @@ class SpecSet(object):
                     # != is the only qualifier than can have multiple values
                     for val in value:
                         if pinned_version == val:
-                            raise ConflictError(
+                            print ConflictError(
                                 "Conflict: {name}=={pinned} with "
                                 "{name}!={version}".format(
                                     name=name, pinned=pinned_version,
@@ -444,7 +447,7 @@ class SpecSet(object):
 
             if less_than and greater_than:
                 if ops['<='](less_than, greater_than):
-                    raise ConflictError(
+                    print ConflictError(
                         'Conflict: {name}{ltop}{lt} and '
                         '{name}{gtop}{gt}'.format(
                             name=name, ltop=less_than_op, lt=less_than,

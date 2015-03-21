@@ -491,12 +491,15 @@ class PackageManager(BasePackageManager):
         if not requirements:
             return []
 
-        with open(requirements, 'r') as requirements:
-            for requirement in requirements.readlines():
-                dep = requirement.strip()
-                if dep == '[test]' or not dep:
-                    break
-                deps.append(dep)
+        try:
+            with open(requirements, 'r') as requirements:
+                for requirement in requirements.readlines():
+                    dep = requirement.strip()
+                    if dep == '[test]' or not dep:
+                        break
+                    deps.append(dep)
+        except Exception as e:
+            print e
         return deps
 
     def read_wheel_requires(self, pydist_json_path):

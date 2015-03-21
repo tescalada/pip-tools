@@ -200,7 +200,7 @@ def _pep426_key(s):
     s = s.strip()
     m = PEP426_VERSION_RE.match(s)
     if not m:
-        raise UnsupportedVersionError('Not a valid version: %s' % s)
+        print UnsupportedVersionError('Not a valid version: %s' % s)
     groups = m.groups()
     nums = tuple(int(v) for v in groups[0].split('.'))
     while len(nums) > 1 and nums[-1] == 0:
@@ -271,9 +271,12 @@ class NormalizedVersion(Version):
         # However, PEP 440 prefix matching needs it: for example,
         # (~= 1.4.5.0) matches differently to (~= 1.4.5.0.0).
         m = PEP426_VERSION_RE.match(s)      # must succeed
-        groups = m.groups()
-        self._release_clause = tuple(int(v) for v in groups[0].split('.'))
-        return result
+        try:
+            groups = m.groups()
+            self._release_clause = tuple(int(v) for v in groups[0].split('.'))
+            return result
+        except Exception as ex:
+            print ex
 
     PREREL_TAGS = set(['a', 'b', 'c', 'rc', 'dev'])
 
