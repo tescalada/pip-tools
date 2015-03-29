@@ -94,7 +94,7 @@ def collect_source_specs(filenames):
             yield spec
 
 
-def compile_specs(source_files, include_sources=False, dry_run=False):
+def compile_specs(source_files, include_sources=False, dry_run=False, strip_line_numbers=False, strip_direct=False):
     logger.debug('===> Collecting source requirements')
     top_level_specs = list(collect_source_specs(source_files))
 
@@ -148,8 +148,11 @@ def compile_specs(source_files, include_sources=False, dry_run=False):
         with open(compiled_file, 'wb') as f:
             for spec in sorted(local_pinned, key=text_type):
                 f.write(text_type(spec).encode('utf-8'))
-                if include_sources:
-                    f.write(b'  # {}'.format(spec.source))
+                if include_sources and not (strip_direct and '~' not in spec.source):
+                    spec_source = spec.source
+                    if strip_line_numbers:
+                        spec_source = re.sub(r"requirements.in:\d+", 'requirements.in', spec_source)
+                    f.write(b'  # {}'.format(spec_source))
                 f.write(b'\n')
 
             # Include external PyPi sources
@@ -163,10 +166,12 @@ def compile_specs(source_files, include_sources=False, dry_run=False):
 @click.option('--dry-run', is_flag=True, help="Only show what would happen, don't change anything")
 @click.option('--include-sources', '-i', is_flag=True,
               help="Write comments to the output file, indicating how the compiled dependencies where calculated")
+@click.option('--strip-line-numbers', '-L', is_flag=True, help="Remove line number from comments")
+@click.option('--strip-direct', '-D', is_flag=True, help="Remove comments on direct requirements")
 @click.option('--find-links', '-f', help="Look for archives in this directory or on this HTML page", multiple=True)
 @click.option('--extra-index-url', default=None, help="Add additional PyPi repo to search")
 @click.argument('files', nargs=-1, type=click.Path(exists=True))
-def cli(verbose, dry_run, include_sources, find_links, extra_index_url, files):
+def cli(verbose, dry_run, include_sources, strip_line_numbers, strip_direct, find_links, extra_index_url, files):
     """Compiles requirements.txt from requirements.in specs."""
     setup_logging(verbose)
 
@@ -182,7 +187,8 @@ def cli(verbose, dry_run, include_sources, find_links, extra_index_url, files):
         click.echo('No input files to process.')
         sys.exit(2)
 
-    compile_specs(src_files, include_sources=include_sources, dry_run=dry_run)
+    compile_specs(src_files, include_sources=include_sources, dry_run=dry_run,
+                  strip_line_numbers=strip_line_numbers, strip_direct=strip_direct)
 
     if dry_run:
         logger.info('Dry-run, so nothing updated.')
